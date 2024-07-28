@@ -55,7 +55,7 @@ class ConfigTest extends TestCase
             ]
         ];
 
-        $config = new Config($config);
+        $config = new Config($config);  
 
         $this->assertNull($config->get('doctrine.connection.driver'));
         $this->assertNull($config->get('foo.bar'));
