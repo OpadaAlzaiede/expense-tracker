@@ -4,7 +4,6 @@ namespace App\Traits;
 
 use Doctrine\ORM\Mapping\Column;
 
-
 trait HasTimeStamps {
 
     #[Column(name: 'created_at')]
