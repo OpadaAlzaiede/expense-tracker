@@ -2,24 +2,42 @@
 
 declare(strict_types = 1);
 
+use Slim\App;
 use App\Config;
-use App\Enum\AppEnvironment;
-use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\ORMSetup;
-use Psr\Container\ContainerInterface;
 use Slim\Views\Twig;
-use Symfony\Bridge\Twig\Extension\AssetExtension;
-use Symfony\Component\Asset\Package;
-use Symfony\Component\Asset\Packages;
-use Symfony\Component\Asset\VersionStrategy\JsonManifestVersionStrategy;
-use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
-use Symfony\WebpackEncoreBundle\Asset\TagRenderer;
-use Symfony\WebpackEncoreBundle\Twig\EntryFilesTwigExtension;
-use Twig\Extra\Intl\IntlExtension;
-
 use function DI\create;
+use Doctrine\ORM\ORMSetup;
+use App\Enum\AppEnvironment;
+use Slim\Factory\AppFactory;
+use Doctrine\ORM\EntityManager;
+use Twig\Extra\Intl\IntlExtension;
+use Symfony\Component\Asset\Package;
+use Psr\Container\ContainerInterface;
+use Symfony\Component\Asset\Packages;
+use Symfony\Bridge\Twig\Extension\AssetExtension;
+use Symfony\WebpackEncoreBundle\Asset\TagRenderer;
+use Psr\Http\Message\ResponseFactoryInterface;
+
+
+use Symfony\WebpackEncoreBundle\Asset\EntrypointLookup;
+use Symfony\WebpackEncoreBundle\Twig\EntryFilesTwigExtension;
+use Symfony\Component\Asset\VersionStrategy\JsonManifestVersionStrategy;
 
 return [
+    App::class                      => function (ContainerInterface $container) {
+        AppFactory::setContainer($container);
+
+        $addMiddlewares = require CONFIG_PATH . '/middleware.php';
+        $router         = require CONFIG_PATH . '/routes/web.php';
+
+        $app = AppFactory::create();
+
+        $router($app);
+
+        $addMiddlewares($app);
+
+        return $app;
+    },
     Config::class                 => create(Config::class)->constructor(require CONFIG_PATH . '/app.php'),
     EntityManager::class          => fn(Config $config) => EntityManager::create(
         $config->get('doctrine.connection'),
@@ -50,4 +68,6 @@ return [
         new EntrypointLookup(BUILD_PATH . '/entrypoints.json'),
         $container->get('webpack_encore.packages')
     ),
+    ResponseFactoryInterface::class => fn(App $app) => $app->getResponseFactory(),
+
 ];
